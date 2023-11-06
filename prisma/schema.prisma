@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("PRM_DB_URL")
+}
+
+model users {
+  id           Int            @id @unique @default(autoincrement())
+  email        String         @unique
+  emailConfirm Boolean        @default(false)
+  userName     String         @unique
+  firstName    String
+  lastName     String
+  password     String
+  avatar       String         @default("no_avatar.jpg")
+  isAdmin      Boolean        @default(false)
+  role         String         @default("USER")
+  createAt     DateTime       @default(now())
+  updateAt     DateTime       @default(now())
+  userReceipts userReceipts[]
+}
+
+model categories {
+  id       Int        @id @default(autoincrement())
+  title    String     @unique
+  active   Boolean    @default(true)
+  avatar   String     @default("no_avatar.jpg")
+  createAt DateTime   @default(now())
+  updateAt DateTime   @default(now())
+  products products[]
+}
+
+model products {
+  id                 Int                  @id @default(autoincrement())
+  name               String
+  avatar             String               @default("no_avatar.jpg")
+  price              Float
+  des                String
+  categoryId         Int
+  createAt           DateTime             @default(now())
+  updateAt           DateTime             @default(now())
+  category           categories           @relation(fields: [categoryId], references: [id])
+  guestReceiptDetail guestReceiptDetail[]
+  userReceiptDetail  userReceiptDetail[]
+}
+
+enum ReceiptState {
+  PENDING
+  ACCEPTED
+  SHIPPING
+  DONE
+}
+
+enum ReceiptPayMode {
+  ZALO
+  CASH
+}
+
+model userReceipts {
+  id                Int                 @id @default(autoincrement())
+  userId            Int
+  user              users               @relation(fields: [userId], references: [id])
+  state             ReceiptState        @default(PENDING)
+  createAt          DateTime            @default(now())
+  acceptTime        DateTime?
+  shippingTime      DateTime?
+  doneTime          DateTime?
+  total             Float
+  payMode           ReceiptPayMode
+  paid              Boolean             @default(false)
+  userReceiptDetail userReceiptDetail[]
+}
+
+model guestReceipts {
+  id                 Int                  @id @default(autoincrement())
+  email              String
+  phoneNumber        String
+  state              ReceiptState         @default(PENDING)
+  createAt           DateTime             @default(now())
+  acceptTime         DateTime?
+  shippingTime       DateTime?
+  doneTime           DateTime?
+  total              Float
+  payMode            ReceiptPayMode
+  paid               Boolean              @default(false)
+  guestReceiptDetail guestReceiptDetail[]
+}
+
+model guestReceiptDetail {
+  id             Int           @id @default(autoincrement())
+  productId      Int
+  product        products      @relation(fields: [productId], references: [id])
+  quantity       Int
+  guestReceiptId Int
+  guestReceipt   guestReceipts @relation(fields: [guestReceiptId], references: [id])
+}
+
+model userReceiptDetail {
+  id            Int          @id @default(autoincrement())
+  productId     Int
+  product       products     @relation(fields: [productId], references: [id])
+  quantity      Int
+  userReceiptId Int
+  userReceipt   userReceipts @relation(fields: [userReceiptId], references: [id])
+}
